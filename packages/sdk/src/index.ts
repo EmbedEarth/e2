@@ -1,0 +1,17 @@
+export { E2, type E2Options } from "./E2.js";
+export { E2 as EmbedEarth } from "./E2.js";
+export { FeatureClient } from "./FeatureClient.js";
+export { RegionClient } from "./RegionClient.js";
+export { DatasetClient, type DatasetListing } from "./DatasetClient.js";
+export { SearchClient, type SearchExecutor, type SearchOptions, type SearchFeatureCollection, type SearchQuery, type SearchFeature, type SearchRow, type SearchQueryResult } from "./SearchClient.js";
+export { HttpSearchExecutor, type HttpSearchOptions } from "./HttpSearchExecutor.js";
+export { RemoteComputeExecutor } from "./RemoteComputeExecutor.js";
+export { DEFAULT_ROUTE_URL, RouteClient, FeatureRouteQuery, type RouteClientOptions, type RouteMode, type RouteLocation, type RouteOptions, type MatrixOptions, type IsochroneOptions, type MapMatchOptions, type FeatureRouteOptions, type ValhallaResponse, type ValhallaRequest } from "./RouteClient.js";
+export { ComputeClient, ComputeQuery, type ComputeExecutor, type ComputePrimitive, type ComputeRequest, type ComputeRelation, type ComputeMode, type ComputeRunOptions, type CompareOptions, type CompareResult, type CompareSide } from "./ComputeClient.js";
+export { PLANET_PMTILES_URL, listMapSources, mapSources, selectMapSnapshot, type MapSource } from "./MapSources.js";
+export { Map, Map as E2M, createMap } from "./MapLibre.js";
+export type { MapFeatureOptions, MapOptions, MapRouteOptions, MapComputeOptions, MapFeatureCollection } from "./MapLibre.js";
+export { MapClient } from "./MapClient.js";
+export type { E2Feature } from "@embedearth/registry";
+export type { E2Region } from "@embedearth/regions";
+export type { DatasetManifest } from "@embedearth/datasets";

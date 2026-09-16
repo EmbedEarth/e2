@@ -1,0 +1,5 @@
+export interface E2Query { feature?: string | string[]; featureId?: number | number[]; e2?: string | string[]; region?: string; start?: Date | string; end?: Date | string; window?: "30d" | "90d" | "1y" | "all"; limit?: number; order?: "asc" | "desc"; }
+export interface E2DatasetRow { id: string; feature_id: number; feature: string; name?: string | null; lat: number; lng: number; geometry?: unknown; h3: string; e2_id: string; observed_at?: string | null; source: string; source_id: string; country_region_id?: string | null; state_region_id?: string | null; city_region_id?: string | null; region_type?: string | null; properties?: Record<string, unknown>; }
+export type ComputePrimitive = "NEAREST" | "DISTANCE" | "WITHIN" | "COUNT" | "DENSITY" | "COVERAGE" | "GAPS" | "CLUSTER";
+export interface ComputeRelation { feature: string | number; distanceMeters: number; }
+export interface ComputeRequest { primitive: ComputePrimitive; feature: string | number | Array<string | number>; region?: string; near?: ComputeRelation; within?: ComputeRelation; limit?: number; radiusMeters?: number; mode?: "cloud" | "offline" | "auto"; }

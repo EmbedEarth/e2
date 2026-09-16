@@ -1,0 +1,1 @@
+export function print(value: unknown, json = false): void { if (json || !Array.isArray(value)) console.log(JSON.stringify(value, (_, item) => typeof item === "bigint" ? item.toString() : item, 2)); else console.table(value); }

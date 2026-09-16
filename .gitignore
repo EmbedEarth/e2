@@ -1,0 +1,29 @@
+node_modules/
+dist/
+dist-data/
+tmp/
+.cache/
+*.sqlite
+!catalog/regions.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+
+# Local/private deployment and snapshot tooling. These stay out of the
+# public EmbedEarth repository while remaining available in this checkout.
+cloudflare/
+fly/
+scripts/datasets/
+scripts/valhalla-artifact.mjs
+scripts/valhalla-build-monitor.mjs
+docs/valhalla-fly.md
+.github/workflows/publish-datasets.yml
+
+*.db
+*.db-shm
+*.db-wal
+*.parquet
+coverage/
+__pycache__/
+*.pyc
+publish.md

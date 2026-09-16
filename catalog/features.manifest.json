@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-14T08:09:20.271Z",
+  "count": 2831,
+  "source": "neon-features",
+  "filter": "supported feature types with h3_status = complete"
+}

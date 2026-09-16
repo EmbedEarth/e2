@@ -1,0 +1,31 @@
+{
+  "name": "embedearth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source maps, places, routing, geocoding, and real-world data for applications and AI agents.",
+  "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "git+https://github.com/embedearth/e2.git" },
+  "homepage": "https://embed.earth",
+  "type": "module",
+  "packageManager": "pnpm@9.9.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean",
+    "test": "pnpm -r test",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@types/geojson": "^7946.0.14",
+    "@types/node": "^20.16.1",
+    "eslint": "^9.9.1",
+    "globals": "^15.9.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.2.0",
+    "vitest": "^2.0.5"
+  }
+}

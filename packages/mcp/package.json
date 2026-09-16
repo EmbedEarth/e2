@@ -1,0 +1,53 @@
+{
+  "name": "@embedearth/mcp",
+  "version": "0.1.14",
+  "type": "module",
+  "description": "Model Context Protocol server for E2 — expose Earth's open spacetime index to AI agents.",
+  "license": "Apache-2.0",
+  "author": "embedearth",
+  "keywords": [
+    "e2",
+    "mcp",
+    "model-context-protocol",
+    "geospatial",
+    "spatiotemporal",
+    "ai",
+    "earth"
+  ],
+  "homepage": "https://embed.earth",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/embedearth/e2.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/embedearth/e2/issues"
+  },
+  "bin": {
+    "embedearth-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup && node ../../scripts/copy-region-catalog.mjs dist",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.5.5-r.4",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "better-sqlite3": "^11.1.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@embedearth/sdk": "workspace:*",
+    "tsup": "^8.2.4"
+  }
+}

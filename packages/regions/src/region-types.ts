@@ -1,0 +1,3 @@
+export type RegionType = "country" | "admin1" | "admin2" | "city" | "borough" | "district" | "neighborhood" | "custom" | "unknown";
+export interface E2Region { id: string; sourceId: string | number; name: string; displayName: string; regionType?: string | null; type: RegionType; countryCode?: string | null; parentId?: string | null; center?: { lat: number; lng: number }; aliases?: string[]; source: { type: "neon-regions"; sourceId: string }; }
+export class AmbiguousRegionError extends Error { constructor(readonly matches: E2Region[]) { super(`Multiple regions matched (${matches.length})`); this.name = "AmbiguousRegionError"; } }

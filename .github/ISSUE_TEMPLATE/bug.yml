@@ -1,0 +1,19 @@
+name: Bug report
+description: Report a reproducible problem in EmbedEarth
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Tell us what you expected and what you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Include the smallest code or CLI command that reproduces it. Remove all secrets.
+    validations:
+      required: true

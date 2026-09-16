@@ -1,0 +1,12 @@
+name: Integration
+description: Add or improve an SDK, CLI, map, database, or agent integration
+title: "[Integration]: "
+labels: [integration]
+body:
+  - type: textarea
+    id: integration
+    attributes:
+      label: Integration details
+      description: What should work, for whom, and through which public interface?
+    validations:
+      required: true

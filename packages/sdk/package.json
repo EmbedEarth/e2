@@ -1,0 +1,89 @@
+{
+  "name": "@embedearth/sdk",
+  "version": "0.1.20",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "node": {
+        "import": "./dist/node.js",
+        "require": "./dist/node.cjs"
+      },
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./browser": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "require": "./dist/node.cjs"
+    },
+    "./map": {
+      "types": "./dist/map-entry.d.ts",
+      "import": "./dist/map-entry.js",
+      "require": "./dist/map-entry.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup && node ../../scripts/copy-region-catalog.mjs dist",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.5.5-r.4",
+    "better-sqlite3": "^11.1.2",
+    "h3-js": "^4.1.0",
+    "hyparquet": "^1.17.0",
+    "hyparquet-compressors": "^1.1.1",
+    "maplibre-gl": "^6.4.0",
+    "pmtiles": "^4.5.0",
+    "protomaps-themes-base": "^4.5.0"
+  },
+  "devDependencies": {
+    "@embedearth/core": "workspace:*",
+    "@embedearth/registry": "workspace:*",
+    "@embedearth/regions": "workspace:*",
+    "@embedearth/datasets": "workspace:*",
+    "@embedearth/storage-sqlite": "workspace:*",
+    "tsup": "^8.2.4"
+  },
+  "description": "Official JavaScript/TypeScript SDK for EmbedEarth.",
+  "license": "Apache-2.0",
+  "author": "embedearth",
+  "keywords": [
+    "e2",
+    "sdk",
+    "geospatial",
+    "spatiotemporal",
+    "earth"
+  ],
+  "homepage": "https://embed.earth",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/embedearth/e2.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/embedearth/e2/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

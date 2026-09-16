@@ -1,0 +1,53 @@
+{
+  "name": "@embedearth/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test"
+  },
+  "dependencies": {
+    "h3-js": "^4.1.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.2.4"
+  },
+  "description": "E2 spacetime cell encoding, decoding, and traversal — the core of the open spacetime index for Earth.",
+  "license": "Apache-2.0",
+  "author": "embedearth",
+  "keywords": [
+    "e2",
+    "geospatial",
+    "spatiotemporal",
+    "h3",
+    "geohash",
+    "earth"
+  ],
+  "homepage": "https://embed.earth",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/embedearth/e2.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/embedearth/e2/issues"
+  },
+  "publishConfig": { "access": "public" }
+}

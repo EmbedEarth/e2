@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://e2.dev/schemas/dataset-row.schema.json",
+  "type": "object",
+  "required": ["feature_id", "feature", "geometry", "source", "source_id", "properties"],
+  "properties": {
+    "feature_id": { "type": ["integer", "string"], "minLength": 1 },
+    "feature": { "type": "string", "minLength": 1 },
+    "name": { "type": ["string", "null"] },
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+    "geometry": { "description": "GeoParquet WKB geometry or decoded GeoJSON geometry" },
+    "bbox": {
+      "description": "Optional GeoParquet covering optimization; it is not required for a dataset row.",
+      "type": ["object", "null"],
+      "required": ["xmin", "ymin", "xmax", "ymax"],
+      "properties": {
+        "xmin": { "type": "number" }, "ymin": { "type": "number" },
+        "xmax": { "type": "number" }, "ymax": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "h3": { "type": "string", "minLength": 1 },
+    "e2_id": { "type": "string", "minLength": 1 },
+    "observed_at": { "type": ["string", "null"] },
+    "source": { "type": "string", "minLength": 1 },
+    "source_id": { "type": ["string", "integer"] },
+    "country_region_id": { "type": ["string", "null"] },
+    "state_region_id": { "type": ["string", "null"] },
+    "city_region_id": { "type": ["string", "null"] },
+    "country_source_id": { "type": ["string", "integer", "null"] },
+    "state_source_id": { "type": ["string", "integer", "null"] },
+    "city_source_id": { "type": ["string", "integer", "null"] },
+    "region_type": { "type": ["string", "null"] },
+    "amenity": { "type": ["string", "null"] },
+    "brand": { "type": ["string", "null"] },
+    "operator": { "type": ["string", "null"] },
+    "category": { "type": ["string", "null"] },
+    "opening_hours": { "type": ["string", "null"] },
+    "wheelchair": { "type": ["string", "null"] },
+    "website": { "type": ["string", "null"] },
+    "properties": { "type": ["object", "string", "null"] }
+  },
+  "additionalProperties": true
+}

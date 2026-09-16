@@ -1,0 +1,56 @@
+{
+  "name": "@embedearth/storage-sqlite",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean --external better-sqlite3",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@embedearth/core": "workspace:*",
+    "better-sqlite3": "^11.1.2",
+    "hyparquet": "^1.17.0",
+    "hyparquet-compressors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "tsup": "^8.2.4"
+  },
+  "description": "Local SQLite + Parquet storage for E2 datasets.",
+  "license": "Apache-2.0",
+  "author": "embedearth",
+  "keywords": [
+    "e2",
+    "sqlite",
+    "parquet",
+    "storage"
+  ],
+  "homepage": "https://embed.earth",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/embedearth/e2.git",
+    "directory": "packages/storage-sqlite"
+  },
+  "bugs": {
+    "url": "https://github.com/embedearth/e2/issues"
+  },
+  "publishConfig": { "access": "public" }
+}

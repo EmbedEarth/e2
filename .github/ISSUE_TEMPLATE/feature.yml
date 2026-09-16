@@ -1,0 +1,19 @@
+name: Feature request
+description: Propose an improvement to the developer platform
+title: "[Feature]: "
+labels: [feature]
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What are you trying to build?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the API, CLI, data, or documentation change.
+    validations:
+      required: true

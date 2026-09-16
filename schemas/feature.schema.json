@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://e2.dev/schemas/feature.schema.json",
+  "type": "object",
+  "required": ["id", "key", "name", "aliases", "featureType", "status"],
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "key": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+    "name": { "type": "string" },
+    "aliases": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "featureType": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@embedearth/core": ["packages/core/src/index.ts"],
+      "@embedearth/registry": ["packages/registry/src/index.ts"],
+      "@embedearth/regions": ["packages/regions/src/index.ts"],
+      "@embedearth/datasets": ["packages/datasets/src/index.ts"],
+      "@embedearth/storage-sqlite": ["packages/storage-sqlite/src/index.ts"],
+      "@embedearth/sdk": ["packages/sdk/src/index.ts"],
+      "@embedearth/sdk/node": ["packages/sdk/src/node.ts"]
+    },
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

@@ -1,0 +1,2 @@
+import { FeatureRegistry, features, type E2Feature } from "@embedearth/registry";
+export class FeatureClient { constructor(private readonly registry: FeatureRegistry = features) {} list(): E2Feature[] { return this.registry.list(); } search(query: string): E2Feature[] { return this.registry.search(query); } get(value: string | number): E2Feature | undefined { try { return this.registry.resolve(value); } catch { return undefined; } } resolve(value: string | number): E2Feature { return this.registry.resolve(value); } }

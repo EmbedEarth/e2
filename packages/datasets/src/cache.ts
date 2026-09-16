@@ -1,0 +1,1 @@
+export class MemoryDatasetCache { private readonly entries = new Map<string, Uint8Array>(); get(key: string): Uint8Array | undefined { return this.entries.get(key); } set(key: string, value: Uint8Array): void { this.entries.set(key, value); } clear(): void { this.entries.clear(); } }
