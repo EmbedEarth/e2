@@ -4,10 +4,11 @@ import { access, mkdir, rename, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import type { PublishedSnapshot } from "@embedearth/datasets";
+import { normalizeSnapshotYear, type PublishedSnapshot } from "@embedearth/datasets";
 import { DatasetClient } from "./DatasetClient.js";
 import { CacheClient, DEFAULT_CACHE_DIRECTORY } from "./CacheClient.js";
 import { getSpatialDuckDBInstance } from "./DuckDB.js";
+import { isInternalResponseColumn, stripInternalColumns } from "./internalColumns.js";
 
 export type SnapshotMode = "cloud" | "offline" | "auto";
 export type SnapshotScalar = string | number | boolean;
@@ -17,6 +18,12 @@ export interface SnapshotQuery {
   regionId?: string | null;
   /** Internal route candidate narrowing against the published H3 column. */
   h3Cells?: readonly string[];
+  /**
+   * Optional snapshot year (for example `"2026"`). Year-split features
+   * (anything that is not `osm` or `visual`) default to the newest available
+   * year, cascading down from the current year.
+   */
+  year?: string | number | null;
   mode?: SnapshotMode;
   localPath?: string;
   cacheDirectory?: string;
@@ -56,8 +63,8 @@ export class SnapshotQueryClient {
     return join(directory, `${snapshot.id}.parquet`);
   }
 
-  async download(options: { feature: string | number; regionId?: string | null; output?: string; cacheDirectory?: string; signal?: AbortSignal }): Promise<string> {
-    const snapshot = await this.datasets.resolveSnapshot(options.feature, options.regionId ?? null, options.signal);
+  async download(options: { feature: string | number; regionId?: string | null; year?: string | number | null; output?: string; cacheDirectory?: string; signal?: AbortSignal }): Promise<string> {
+    const snapshot = await this.datasets.resolveSnapshot(options.feature, options.regionId ?? null, options.signal, options.year);
     const output = options.output ?? this.cachePath(snapshot, options.cacheDirectory);
     await mkdir(dirname(output), { recursive: true });
     if (await exists(output)) {
@@ -84,7 +91,8 @@ export class SnapshotQueryClient {
   }
 
   async query(query: SnapshotQuery): Promise<SnapshotResult> {
-    const snapshot = await this.datasets.resolveSnapshot(query.feature, query.regionId ?? null, query.signal);
+    const snapshot = await this.datasets.resolveSnapshot(query.feature, query.regionId ?? null, query.signal, query.year);
+    const requestedYear = normalizeSnapshotYear(query.year) ?? (snapshot.year !== "0000" ? snapshot.year : null);
     if (snapshot.format !== "geoparquet" || snapshot.schemaVersion < 2) throw new Error(`Snapshot ${snapshot.id} is not a supported GeoParquet snapshot`);
     const mode = query.mode ?? "auto";
     const cached = query.localPath ?? this.cachePath(snapshot, query.cacheDirectory);
@@ -110,18 +118,27 @@ export class SnapshotQueryClient {
       const description = await connection.runAndReadAll("DESCRIBE SELECT * FROM read_parquet($1)", [source]);
       const available = new Set((description.getRowObjectsJson() as Array<{ column_name?: unknown }>).map((row) => String(row.column_name ?? "")));
       const limit = Math.min(Math.max(query.limit ?? 1000, 1), 100_000);
-      const selectedColumns = [...available].filter((column) => column !== "geometry" && column !== "properties").map(quoteIdentifier);
+      const selectedColumns = [...available].filter((column) => column !== "geometry" && column !== "properties" && !isInternalResponseColumn(column)).map(quoteIdentifier);
       const selected = selectedColumns.length ? `${selectedColumns.join(", ")}, ` : "";
       const properties = available.has("properties") ? "properties::JSON" : "NULL::JSON";
       const geometry = available.has("geometry") ? "ST_AsGeoJSON(geometry)::JSON" : "NULL::JSON";
       const h3Cells = [...new Set(query.h3Cells ?? [])].filter((cell) => /^[0-9a-f]+$/iu.test(cell));
-      const h3Filter = h3Cells.length && available.has("h3_r7")
-        ? ` WHERE "h3_r7" IN (${h3Cells.map((_, index) => `$${index + 2}`).join(", ")})`
-        : "";
-      parameters.push(...h3Cells);
-      const sql = `SELECT ${selected}${properties} AS properties, ${geometry} AS geometry FROM read_parquet($1)${h3Filter} LIMIT ${limit}`;
+      const filters: string[] = [];
+      if (h3Cells.length && available.has("h3_r7")) {
+        filters.push(`"h3_r7" IN (${h3Cells.map((_, index) => `$${parameters.length + 1 + index}`).join(", ")})`);
+        parameters.push(...h3Cells);
+      }
+      // Some snapshots carry a `year` column (notably the combined year=0000
+      // snapshots). Narrow it when the caller asked for a year or when the
+      // resolved snapshot is itself a single year.
+      if (requestedYear && requestedYear !== "0000" && available.has("year")) {
+        filters.push(`CAST("year" AS VARCHAR) = $${parameters.length + 1}`);
+        parameters.push(requestedYear);
+      }
+      const where = filters.length ? ` WHERE ${filters.join(" AND ")}` : "";
+      const sql = `SELECT ${selected}${properties} AS properties, ${geometry} AS geometry FROM read_parquet($1)${where} LIMIT ${limit}`;
       const reader = await connection.runAndReadAll(sql, parameters);
-      const rows = (reader.getRowObjectsJson() as Record<string, unknown>[]).map((row) => ({
+      const rows = (reader.getRowObjectsJson() as Record<string, unknown>[]).map((row) => stripInternalColumns({
         ...row, properties: parseJsonValue(row.properties), geometry: parseJsonValue(row.geometry),
       }));
       return { mode: resolvedMode, snapshot, rows };
@@ -135,9 +152,10 @@ export function snapshotGeoJSON(result: SnapshotResult): { type: "FeatureCollect
   return {
     type: "FeatureCollection",
     features: result.rows.map((row) => {
-      const { geometry, properties, ...fields } = row;
+      const cleaned = stripInternalColumns(row);
+      const { geometry, properties, ...fields } = cleaned;
       const sourceId = fields.source_id ?? (properties && typeof properties === "object" ? (properties as Record<string, unknown>).source_id : undefined);
-      return { type: "Feature", ...(fields.id !== undefined || sourceId !== undefined ? { id: fields.id ?? sourceId } : {}), geometry, properties: { ...fields, ...(properties as Record<string, unknown> ?? {}) } };
+      return { type: "Feature", ...(fields.id !== undefined || sourceId !== undefined ? { id: fields.id ?? sourceId } : {}), geometry, properties: { ...fields, ...((properties as Record<string, unknown> ?? {})) } };
     }),
   };
 }

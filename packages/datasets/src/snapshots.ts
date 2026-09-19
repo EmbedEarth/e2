@@ -22,7 +22,7 @@ export interface SnapshotIndex {
 type CacheEntry = { etag?: string; value: SnapshotIndex };
 const cache = new Map<string, CacheEntry>();
 export const DEFAULT_SNAPSHOT_INDEX_URL = document.snapshotIndex.url;
-export const DEFAULT_SNAPSHOT_API_URL = "https://api.embed.earth";
+export const DEFAULT_SNAPSHOT_API_URL = "https://e2-snapshots-sqlite.fly.dev";
 
 export interface SnapshotApiRow {
   id: string; feature_id: number; region_id: number | null;
@@ -60,11 +60,21 @@ export function snapshotFromApiRow(row: SnapshotApiRow, feature: string, feature
   };
 }
 
-export async function resolveSnapshotFromApi(options: { featureId: number; feature: string; featureName: string; regionId?: string | null; apiUrl?: string; signal?: AbortSignal }): Promise<PublishedSnapshot> {
+export function normalizeSnapshotYear(year: string | number | null | undefined): string | null {
+  if (year === undefined || year === null) return null;
+  const value = String(year).trim();
+  if (!value) return null;
+  if (!/^\d{1,4}$/u.test(value)) throw new TypeError(`Snapshot year must be a 1-4 digit year, received ${year}`);
+  return value.padStart(4, "0");
+}
+
+export async function resolveSnapshotFromApi(options: { featureId: number; feature: string; featureName: string; regionId?: string | null; year?: string | number | null; apiUrl?: string; signal?: AbortSignal }): Promise<PublishedSnapshot> {
   const url = new URL("/search", options.apiUrl ?? DEFAULT_SNAPSHOT_API_URL);
   url.searchParams.set("feature_id", String(options.featureId));
   const regionId = apiRegionId(options.regionId ?? null);
   if (regionId) url.searchParams.set("region_id", regionId);
+  const year = normalizeSnapshotYear(options.year);
+  if (year) url.searchParams.set("year", year);
   const response = await fetch(url, { signal: options.signal });
   if (response.status === 404) throw new Error(`No published snapshot for feature ${options.featureId}${regionId ? ` in ${options.regionId}` : " overall"}`);
   if (!response.ok) throw new Error(`Snapshot API request failed: HTTP ${response.status}`);
@@ -85,8 +95,15 @@ export async function loadSnapshotIndex(url = DEFAULT_SNAPSHOT_INDEX_URL, signal
   return value;
 }
 
-export function selectSnapshot(index: SnapshotIndex, featureId: number, regionId: string | null = null): PublishedSnapshot {
-  const matches = index.snapshots.filter((item) => item.featureId === featureId && item.regionId === regionId).sort((a, b) => b.snapshotDate.localeCompare(a.snapshotDate));
+export function selectSnapshot(index: SnapshotIndex, featureId: number, regionId: string | null = null, year?: string | number | null): PublishedSnapshot {
+  const normalizedYear = normalizeSnapshotYear(year);
+  const scopeMatches = index.snapshots.filter((item) => item.featureId === featureId && item.regionId === regionId);
+  if (normalizedYear) {
+    const matches = scopeMatches.filter((item) => item.year === normalizedYear).sort((a, b) => b.snapshotDate.localeCompare(a.snapshotDate));
+    if (!matches[0]) throw new Error(`No published snapshot for feature ${featureId}${regionId ? ` in ${regionId}` : " overall"} for year ${normalizedYear}`);
+    return matches[0];
+  }
+  const matches = scopeMatches.sort((a, b) => b.snapshotDate.localeCompare(a.snapshotDate));
   if (!matches[0]) throw new Error(`No published snapshot for feature ${featureId}${regionId ? ` in ${regionId}` : " overall"}`);
   return matches[0];
 }

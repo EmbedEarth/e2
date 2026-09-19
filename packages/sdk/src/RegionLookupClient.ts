@@ -1,4 +1,4 @@
-export const DEFAULT_REGION_LOOKUP_URL = "https://api.embed.earth/regions/resolve";
+export const DEFAULT_REGION_LOOKUP_URL = "https://e2-snapshots-sqlite.fly.dev/regions/resolve";
 
 export interface RegionLookupResult {
   lat: number;

@@ -10,6 +10,12 @@ export type ComputePrimitive =
 export type ComputeMode = "cloud" | "offline" | "auto";
 export interface ComputeRunOptions {
   mode?: ComputeMode;
+  /**
+   * Optional snapshot year (for example `"2026"`). Year-split features
+   * (anything that is not `osm` or `visual`) default to the newest available
+   * year, cascading down from the current year.
+   */
+  year?: string | number | null;
   latitude?: number;
   longitude?: number;
   signal?: AbortSignal;
@@ -23,6 +29,7 @@ export interface CompareOptions {
   area_id?: string;
   primitive?: ComputePrimitive;
   mode?: ComputeMode;
+  year?: string | number | null;
   near?: ComputeRelation;
   within?: ComputeRelation;
   limit?: number;
@@ -52,6 +59,12 @@ export interface ComputeRequest {
   limit?: number;
   radiusMeters?: number;
   mode?: ComputeMode;
+  /**
+   * Optional snapshot year (for example `"2026"`). Year-split features
+   * (anything that is not `osm` or `visual`) default to the newest available
+   * year, cascading down from the current year.
+   */
+  year?: string | number | null;
   signal?: AbortSignal;
   latitude?: number;
   longitude?: number;
@@ -67,6 +80,7 @@ export class ComputeQuery {
   private relation?: ComputeRelation;
   private resultLimit?: number;
   private modeValue?: ComputeMode;
+  private yearValue?: string | number | null;
 
   constructor(
     private readonly executor: ComputeExecutor | undefined,
@@ -116,6 +130,11 @@ export class ComputeQuery {
     return this;
   }
 
+  year(value: string | number | null): this {
+    this.yearValue = value;
+    return this;
+  }
+
   async run(primitive: ComputePrimitive, options: ComputeRunOptions = {}): Promise<unknown> {
     if (!this.executor) throw new Error("Compute is not configured. Open a LocalDatabase and pass it to E2.");
     if ((options.latitude === undefined) !== (options.longitude === undefined)) throw new TypeError("latitude and longitude must be provided together");
@@ -129,6 +148,7 @@ export class ComputeQuery {
       area_id: this.areaIdValue ?? (this.areaValue === undefined ? undefined : this.resolveArea(this.areaValue)) ?? coordinateRegion ?? undefined,
       limit: this.resultLimit,
       mode: options.mode ?? this.modeValue,
+      ...(options.year !== undefined && options.year !== null ? { year: options.year } : (this.yearValue !== undefined && this.yearValue !== null ? { year: this.yearValue } : {})),
       signal: options.signal,
     };
     if (primitive === "WITHIN" || primitive === "COVERAGE" || primitive === "GAPS") request.within = this.relation;
@@ -200,6 +220,7 @@ export class ComputeClient {
       within: request.within,
       limit: request.limit,
       mode: request.mode,
+      ...(request.year !== undefined && request.year !== null ? { year: request.year } : {}),
     })));
     const leftValue = values[0];
     const rightValue = values[1];

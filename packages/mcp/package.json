@@ -1,8 +1,9 @@
 {
   "name": "@embedearth/mcp",
-  "version": "0.1.14",
+  "version": "0.1.19",
   "type": "module",
-  "description": "Model Context Protocol server for E2 — expose Earth's open spacetime index to AI agents.",
+  "mcpName": "io.github.paulwxnter/mcp",
+  "description": "Open-source Google Maps Platform alternative for agents: search, route, map, geocode, and compute.",
   "license": "Apache-2.0",
   "author": "embedearth",
   "keywords": [

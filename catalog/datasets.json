@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatedAt": "2026-08-13T02:33:52.284819+00:00",
   "snapshotIndex": {
-    "url": "https://datasets.embed.earth/datasets/index.json.gz"
+    "url": "https://eartho.s3.us-east-005.backblazeb2.com/datasets/index.json.gz"
   },
   "datasets": [
     {
@@ -16,7 +16,7 @@
       "bytes": 147143004,
       "sha256": "476f6b2000d85a51ec70b322685cdffd099ac80789405763cd1841d3bdb23e85",
       "download": {
-        "url": "https://datasets.embed.earth/datasets/restaurant/2026-08-13/data.parquet"
+        "url": "https://eartho.s3.us-east-005.backblazeb2.com/datasets/restaurant/2026-08-13/data.parquet"
       },
       "status": "published"
     },
@@ -31,7 +31,7 @@
       "bytes": 12209790,
       "sha256": "e536a2ccc6cfe7cdbf776ba39e775987e96f61cfca7d9f9ba5eb71afd5f59899",
       "download": {
-        "url": "https://datasets.embed.earth/datasets/hospital/2026-08-13/data.parquet"
+        "url": "https://eartho.s3.us-east-005.backblazeb2.com/datasets/hospital/2026-08-13/data.parquet"
       },
       "status": "published"
     },
@@ -46,7 +46,7 @@
       "bytes": 52755956,
       "sha256": "5b0c3c6aab37778c6c5aecf029e56227800415e3bf98e7332c538c50668336e6",
       "download": {
-        "url": "https://datasets.embed.earth/datasets/school/2026-08-13/data.parquet"
+        "url": "https://eartho.s3.us-east-005.backblazeb2.com/datasets/school/2026-08-13/data.parquet"
       },
       "status": "published"
     }

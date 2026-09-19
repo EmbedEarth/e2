@@ -14,20 +14,21 @@ const feature = z.union([z.string(), z.number()]);
 
 server.registerTool("e2_search", {
   title: "Search Earth features",
-  description: "Search one or more features and named areas. Returns a GeoJSON FeatureCollection.",
+  description: "Search one or more features and named areas. Returns a GeoJSON FeatureCollection. Optional year narrows year-split snapshots; year-split features (anything not osm/visual) default to the newest year (2026, then 2025, ...). Internal c_id/s_id/r_id/p_id and h3 columns are removed from results.",
   inputSchema: {
-    feature: z.union([feature, z.array(feature).min(1)]), area: z.union([z.string(), z.array(z.string()).min(1)]).optional(), area_id: z.union([z.string(), z.array(z.string()).min(1)]).optional(), country_code: z.string().min(1).optional(), state_code: z.string().min(1).optional(), latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(),
+    feature: z.union([feature, z.array(feature).min(1)]), area: z.union([z.string(), z.array(z.string()).min(1)]).optional(), area_id: z.union([z.string(), z.array(z.string()).min(1)]).optional(), country_code: z.string().min(1).optional(), state_code: z.string().min(1).optional(), year: z.union([z.string(), z.number()]).optional().describe("Optional snapshot year, for example 2026"), latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(),
     mode: z.enum(["cloud", "offline", "auto"]).default("auto"), limit: z.number().int().min(1).max(100000).default(1000),
   },
 }, async (args) => ok(await e2.search(args)));
 
 server.registerTool("e2_stratum", {
   title: "Manage EmbedEarth Stratum data",
-  description: "Manage the verified local cache, pull published Stratum data, query it locally or from the server, and upload local GeoJSON, CSV, or Parquet.",
+  description: "Manage the verified local cache, pull published Stratum data, query it locally or from the server, and upload local GeoJSON, CSV, or Parquet. Optional year narrows year-split snapshots; year-split features default to the newest year (2026, then 2025, ...).",
   inputSchema: {
     operation: z.enum(["cacheList", "cacheSet", "cacheDelete", "cacheClear", "download", "query", "upload", "featureList", "featureSearch", "featureInfo", "areaList", "areaSearch", "areaInfo", "dataList", "dataInfo"]),
     size: z.union([z.string(), z.number()]).optional(), key: z.string().optional(),
     feature: feature.optional(), area_id: z.string().optional(), output: z.string().optional(),
+    year: z.union([z.string(), z.number()]).optional().describe("Optional snapshot year, for example 2026"),
     mode: z.enum(["cloud", "offline", "auto"]).default("auto"), limit: z.number().int().min(1).max(100000).default(1000),
     path: z.string().optional(), database: z.string().optional(), connectTo: feature.optional(), featureId: z.number().int().positive().optional(), namespace: z.string().optional(), query: z.string().optional(), id: z.string().optional(),
   },
@@ -38,11 +39,11 @@ server.registerTool("e2_stratum", {
   if (args.operation === "cacheClear") return ok({ deleted: await e2.stratum.cache.clear() });
   if (args.operation === "download") {
     if (args.feature === undefined) throw new Error("feature is required for download");
-    return ok({ path: await e2.stratum.download({ feature: args.feature, regionId: args.area_id ?? null, output: args.output }) });
+    return ok({ path: await e2.stratum.download({ feature: args.feature, regionId: args.area_id ?? null, ...(args.year !== undefined ? { year: args.year } : {}), output: args.output }) });
   }
   if (args.operation === "query") {
     if (args.feature === undefined) throw new Error("feature is required for query");
-    return ok(stratumGeoJSON(await e2.stratum.query({ feature: args.feature, regionId: args.area_id ?? null, mode: args.mode, limit: args.limit })));
+    return ok(stratumGeoJSON(await e2.stratum.query({ feature: args.feature, regionId: args.area_id ?? null, ...(args.year !== undefined ? { year: args.year } : {}), mode: args.mode, limit: args.limit })));
   }
   if (args.operation === "featureList") return ok(e2.stratum.features.list());
   if (args.operation === "featureSearch") { if (!args.query) throw new Error("query is required for featureSearch"); return ok(e2.stratum.features.search(args.query)); }
@@ -84,10 +85,10 @@ server.registerTool("e2_route_to_feature", {
 
 server.registerTool("e2_compute", {
   title: "Compute over features",
-  description: "Run NEAREST, DISTANCE, WITHIN, COUNT, DENSITY, COVERAGE, GAPS, or CLUSTER against cloud, cached, or local features.",
+  description: "Run NEAREST, DISTANCE, WITHIN, COUNT, DENSITY, COVERAGE, GAPS, or CLUSTER against cloud, cached, or local features. Optional year narrows year-split snapshots; year-split features default to the newest year (2026, then 2025, ...).",
   inputSchema: {
     database: z.string().optional(), mode: z.enum(["cloud", "offline", "auto"]).default("auto"), primitive: z.enum(["NEAREST", "DISTANCE", "WITHIN", "COUNT", "DENSITY", "COVERAGE", "GAPS", "CLUSTER"]),
-    feature: z.array(feature).min(1), area: z.string().optional(), area_id: z.string().optional(), near: feature.optional(), within: feature.optional(), distanceMeters: z.number().min(0).default(500), limit: z.number().int().min(1).max(100000).default(1000),
+    feature: z.array(feature).min(1), area: z.string().optional(), area_id: z.string().optional(), year: z.union([z.string(), z.number()]).optional().describe("Optional snapshot year, for example 2026"), near: feature.optional(), within: feature.optional(), distanceMeters: z.number().min(0).default(500), limit: z.number().int().min(1).max(100000).default(1000),
   },
 }, async (args) => {
   const database = args.database ? await LocalDatabase.open(args.database) : undefined;
@@ -100,22 +101,23 @@ server.registerTool("e2_compute", {
     if (args.within !== undefined) query.within(args.within, args.distanceMeters);
     query.limit(args.limit);
     query.mode(args.mode);
+    if (args.year !== undefined) query.year(args.year);
     return ok(await query.run(args.primitive));
   } finally { database?.close(); }
 });
 
 server.registerTool("e2_compare", {
   title: "Compare features or areas",
-  description: "Compare two features in one area or one feature across two areas using the compute backend.",
+  description: "Compare two features in one area or one feature across two areas using the compute backend. Optional year narrows year-split snapshots.",
   inputSchema: {
     database: z.string().optional(), mode: z.enum(["cloud", "offline", "auto"]).default("auto"), primitive: z.enum(["NEAREST", "DISTANCE", "WITHIN", "COUNT", "DENSITY", "COVERAGE", "GAPS", "CLUSTER"]).default("COUNT"),
-    features: z.tuple([feature, feature]).optional(), feature: feature.optional(), areas: z.tuple([z.string(), z.string()]).optional(), area_ids: z.tuple([z.string(), z.string()]).optional(), area: z.string().optional(), area_id: z.string().optional(),
+    features: z.tuple([feature, feature]).optional(), feature: feature.optional(), areas: z.tuple([z.string(), z.string()]).optional(), area_ids: z.tuple([z.string(), z.string()]).optional(), area: z.string().optional(), area_id: z.string().optional(), year: z.union([z.string(), z.number()]).optional().describe("Optional snapshot year, for example 2026"),
   },
 }, async (args) => {
   const database = args.database ? await LocalDatabase.open(args.database) : undefined;
   try {
     const local = new E2(database ? { compute: database } : {});
-    return ok(await local.compute.compare({ features: args.features, feature: args.feature, areas: args.areas, area_ids: args.area_ids, area: args.area, area_id: args.area_id, primitive: args.primitive, mode: args.mode }));
+    return ok(await local.compute.compare({ features: args.features, feature: args.feature, areas: args.areas, area_ids: args.area_ids, area: args.area, area_id: args.area_id, primitive: args.primitive, mode: args.mode, ...(args.year !== undefined ? { year: args.year } : {}) }));
   } finally { database?.close(); }
 });
 

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.paulwxnter/mcp",
+  "description": "Open-source Google Maps Platform alternative for agents: search, route, map, geocode, and compute.",
+  "title": "EmbedEarth (E2)",
+  "websiteUrl": "https://embed.earth",
+  "repository": {
+    "url": "https://github.com/embedearth/e2",
+    "source": "github",
+    "subfolder": "packages/mcp"
+  },
+  "version": "0.1.19",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@embedearth/mcp",
+      "version": "0.1.19",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "E2_API_KEY",
+          "description": "Optional EmbedEarth API key from embed.earth. Raises Cloud Search, Compute, and Route limits from 60 to 2,000 requests per minute and is required for street-level imagery.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "ROUTE_URL",
+          "description": "Optional URL of a custom routing service compatible with the E2 route API. Defaults to the first-party routing endpoint.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import type { SearchExecutor, SearchFeature, SearchRow } from "./SearchClient.js";
 import type { ComputeExecutor, ComputeRequest, ComputeRelation } from "./ComputeClient.js";
+import { stripInternalColumns } from "./internalColumns.js";
 
 interface ComputeRow extends SearchRow {
   lat: number;
@@ -48,15 +49,22 @@ function relatedRows(source: ComputeRow[], targets: ComputeRow[], relation: Comp
   return relation ? distances.filter((row) => row.distanceMeters !== null && row.distanceMeters <= relation.distanceMeters) : distances;
 }
 
+function cleanRow<T extends SearchRow>(row: T): T {
+  const { nearest, ...rest } = row as T & { nearest?: SearchRow };
+  const cleaned = stripInternalColumns(rest as Record<string, unknown>);
+  if (nearest) (cleaned as Record<string, unknown>).nearest = stripInternalColumns(nearest as Record<string, unknown>);
+  return { ...row, ...cleaned } as T;
+}
+
 function compute(request: ComputeRequest, source: ComputeRow[], targets: ComputeRow[]): unknown {
   const relation = request.within ?? request.near;
   const distances = nearestRows(source, targets);
   const within = relatedRows(source, targets, relation);
   const limit = Math.min(Math.max(request.limit ?? 1000, 1), 100_000);
   switch (request.primitive) {
-    case "NEAREST": return distances.filter((row) => row.distanceMeters !== null).sort((a, b) => Number(a.distanceMeters) - Number(b.distanceMeters)).slice(0, limit);
+    case "NEAREST": return distances.filter((row) => row.distanceMeters !== null).sort((a, b) => Number(a.distanceMeters) - Number(b.distanceMeters)).slice(0, limit).map(cleanRow);
     case "DISTANCE": return distances.filter((row) => row.distanceMeters !== null).sort((a, b) => Number(a.distanceMeters) - Number(b.distanceMeters)).slice(0, limit).map((row) => ({ id: row.id, feature: row.feature, nearest: row.nearest?.id, distanceMeters: row.distanceMeters }));
-    case "WITHIN": return within.slice(0, limit);
+    case "WITHIN": return within.slice(0, limit).map(cleanRow);
     case "COUNT": return within.length;
     case "DENSITY": {
       const radius = request.radiusMeters ?? relation?.distanceMeters;
@@ -69,7 +77,7 @@ function compute(request: ComputeRequest, source: ComputeRow[], targets: Compute
     }
     case "GAPS": {
       if (!targets.length || !relation) return [];
-      return targets.filter((target) => !source.some((row) => distanceMeters(row, target) <= relation.distanceMeters)).slice(0, limit);
+      return targets.filter((target) => !source.some((row) => distanceMeters(row, target) <= relation.distanceMeters)).slice(0, limit).map(cleanRow);
     }
     case "CLUSTER": {
       const radius = request.radiusMeters ?? relation?.distanceMeters ?? 1000;
@@ -93,16 +101,19 @@ function compute(request: ComputeRequest, source: ComputeRow[], targets: Compute
 export class RemoteComputeExecutor implements ComputeExecutor {
   constructor(private readonly search: SearchExecutor) {}
 
-  private async load(feature: SearchFeature | SearchFeature[], areaId: string | undefined, mode: ComputeRequest["mode"]): Promise<ComputeRow[]> {
+  private async load(feature: SearchFeature | SearchFeature[], areaId: string | undefined, mode: ComputeRequest["mode"], year?: string | number | null): Promise<ComputeRow[]> {
     const features = Array.isArray(feature) ? feature : [feature];
-    const results = await Promise.all(features.map((value) => this.search.query({ feature: value, regionId: areaId, mode, limit: 100_000 })));
+    const results = await Promise.all(features.map((value) => this.search.query({
+      feature: value, regionId: areaId, mode, limit: 100_000,
+      ...(year !== undefined && year !== null ? { year } : {}),
+    })));
     return results.flatMap(rowsFrom);
   }
 
   async compute(request: Omit<ComputeRequest, "area" | "area_id"> & { area_id?: string }): Promise<unknown> {
-    const source = await this.load(request.feature, request.area_id, request.mode);
+    const source = await this.load(request.feature, request.area_id, request.mode, request.year);
     const relation = request.within ?? request.near;
-    const targets = relation ? await this.load(relation.feature, request.area_id, request.mode) : [];
+    const targets = relation ? await this.load(relation.feature, request.area_id, request.mode, request.year) : [];
     return compute(request, source, targets);
   }
 }

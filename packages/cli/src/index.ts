@@ -22,11 +22,11 @@ const locations = (value?: string): RouteLocation[] => {
 };
 const featureValue = (value: string): string | number => /^\d+$/u.test(value) ? Number(value) : value;
 
-const search = program.command("search").description("Search one or more features and areas; returns GeoJSON");
-search.argument("[features...]", "feature keys or ids").option("--feature <feature>", "feature key or id (repeatable)", collect, []).option("--area <area>", "named area (repeatable)", collect, []).option("--area-id <id>", "exact area ID (repeatable)", collect, []).option("--country-code <code>", "country code, for example US").option("--state-code <code>", "state or province code, for example NY").option("--latitude <degrees>", "latitude for a point-centered search").option("--longitude <degrees>", "longitude for a point-centered search").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--limit <number>", "maximum features", "1000").action(async (features: string[], options) => {
+const search = program.command("search").description("Search one or more features and areas; returns GeoJSON. Optional --year narrows year-split snapshots; year-split features default to the newest year (2026, then 2025, ...).");
+search.argument("[features...]", "feature keys or ids").option("--feature <feature>", "feature key or id (repeatable)", collect, []).option("--area <area>", "named area (repeatable)", collect, []).option("--area-id <id>", "exact area ID (repeatable)", collect, []).option("--country-code <code>", "country code, for example US").option("--state-code <code>", "state or province code, for example NY").option("--year <year>", "optional snapshot year, for example 2026").option("--latitude <degrees>", "latitude for a point-centered search").option("--longitude <degrees>", "longitude for a point-centered search").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--limit <number>", "maximum features", "1000").action(async (features: string[], options) => {
   const selected = [...features, ...options.feature];
   if (!selected.length) throw new Error("Search requires one or more features");
-  print(await e2.search({ feature: selected, area: options.area, area_id: options.areaId, country_code: options.countryCode, state_code: options.stateCode, latitude: options.latitude === undefined ? undefined : Number(options.latitude), longitude: options.longitude === undefined ? undefined : Number(options.longitude), mode: options.mode, limit: Number(options.limit) }), true);
+  print(await e2.search({ feature: selected, area: options.area, area_id: options.areaId, country_code: options.countryCode, state_code: options.stateCode, ...(options.year !== undefined ? { year: options.year } : {}), latitude: options.latitude === undefined ? undefined : Number(options.latitude), longitude: options.longitude === undefined ? undefined : Number(options.longitude), mode: options.mode, limit: Number(options.limit) }), true);
 });
 
 const stratum = program.command("stratum").description("Pull published E2 strata, manage the local cache, query, and upload local data");
@@ -35,15 +35,15 @@ stratumCache.command("set <size>").description("Set the cache limit; minimum 1GB
 stratumCache.command("list").action(async () => print(await e2.stratum.cache.list(), true));
 stratumCache.command("delete <key>").alias("remove").action(async (key) => print({ deleted: await e2.stratum.cache.remove(key) }, true));
 stratumCache.command("clear").action(async () => print({ deleted: await e2.stratum.cache.clear() }, true));
-stratum.command("download <feature>").requiredOption("--out <path>").option("--area <name>").option("--area-id <id>").action(async (feature, options) => {
+stratum.command("download <feature>").requiredOption("--out <path>").option("--area <name>").option("--area-id <id>").option("--year <year>", "optional snapshot year, for example 2026").action(async (feature, options) => {
   if (options.area && options.areaId) throw new Error("Use --area or --area-id, not both");
   const regionId = options.areaId ?? (options.area ? e2.regions.resolve(options.area).id : null);
-  console.log(await e2.stratum.download({ feature: featureValue(feature), regionId, output: options.out }));
+  console.log(await e2.stratum.download({ feature: featureValue(feature), regionId, ...(options.year !== undefined ? { year: options.year } : {}), output: options.out }));
 });
-stratum.command("query <feature>").option("--area <name>").option("--area-id <id>").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--limit <number>", "maximum features", "1000").action(async (feature, options) => {
+stratum.command("query <feature>").option("--area <name>").option("--area-id <id>").option("--year <year>", "optional snapshot year; year-split features default to the newest year (2026, then 2025, ...)").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--limit <number>", "maximum features", "1000").action(async (feature, options) => {
   if (options.area && options.areaId) throw new Error("Use --area or --area-id, not both");
   const regionId = options.areaId ?? (options.area ? e2.regions.resolve(options.area).id : null);
-  print(stratumGeoJSON(await e2.stratum.query({ feature: featureValue(feature), regionId, mode: options.mode, limit: Number(options.limit) })), true);
+  print(stratumGeoJSON(await e2.stratum.query({ feature: featureValue(feature), regionId, ...(options.year !== undefined ? { year: options.year } : {}), mode: options.mode, limit: Number(options.limit) })), true);
 });
 stratum.command("upload <path>").requiredOption("--db <path>").option("--feature <feature>", "built-in feature key or local feature name").option("--namespace <name>", "local-only feature namespace").option("--connect-to <feature>", "existing feature to attach feature_id to").option("--feature-id <number>").option("--out <path>").option("--area-id <id>").action(async (path, options) => print(await e2.stratum.upload({ path, database: options.db, feature: options.feature, namespace: options.namespace, connectTo: options.connectTo, featureId: options.featureId ? Number(options.featureId) : undefined, output: options.out, region: options.areaId }), true));
 const stratumFeatures = stratum.command("features").description("Look up built-in geographic features");
@@ -72,10 +72,10 @@ route.command("to-feature <feature>").requiredOption("--from <lat,lng>").option(
 });
 route.command("request <endpoint>").requiredOption("--body <json>").action(async (endpoint, options) => print(await e2.route.request(endpoint, JSON.parse(options.body)), true));
 
-const compute = program.command("compute").description("Run cloud, cached, or local spatial compute primitives");
+const compute = program.command("compute").description("Run cloud, cached, or local spatial compute primitives. Optional --year narrows year-split snapshots; year-split features default to the newest year (2026, then 2025, ...).");
 const primitives: ComputePrimitive[] = ["NEAREST", "DISTANCE", "WITHIN", "COUNT", "DENSITY", "COVERAGE", "GAPS", "CLUSTER"];
 for (const primitive of primitives) {
-  compute.command(`${primitive.toLowerCase()} <features...>`).option("--db <path>", "optional local SQLite database").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--area <area>").option("--area-id <id>").option("--near <feature>").option("--within <feature>").option("--distance <meters>", "relation radius", "500").option("--limit <number>", "maximum result rows", "1000").action(async (features: string[], options) => {
+  compute.command(`${primitive.toLowerCase()} <features...>`).option("--db <path>", "optional local SQLite database").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--area <area>").option("--area-id <id>").option("--year <year>", "optional snapshot year, for example 2026").option("--near <feature>").option("--within <feature>").option("--distance <meters>", "relation radius", "500").option("--limit <number>", "maximum result rows", "1000").action(async (features: string[], options) => {
     const database = options.db ? await LocalDatabase.open(options.db) : undefined;
     try {
       const client = new E2(database ? { compute: database } : {});
@@ -86,11 +86,12 @@ for (const primitive of primitives) {
       if (relation) (options.within ? query.within : query.near)(featureValue(relation), Number(options.distance));
       query.limit(Number(options.limit));
       query.mode(options.mode);
+      if (options.year !== undefined) query.year(options.year);
       print(await query.run(primitive), true);
     } finally { database?.close(); }
   });
 }
-compute.command("compare").option("--features <features>", "two comma-separated feature keys or IDs").option("--feature <feature>", "feature key or ID", collect, []).option("--areas <areas>", "two comma-separated area names").option("--area <area>", "area name", collect, []).option("--area-ids <ids>", "two comma-separated exact area IDs").option("--area-id <id>", "exact area ID for a feature comparison").option("--primitive <primitive>", "comparison primitive", "COUNT").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--db <path>", "optional local SQLite database").action(async (options) => {
+compute.command("compare").option("--features <features>", "two comma-separated feature keys or IDs").option("--feature <feature>", "feature key or ID", collect, []).option("--areas <areas>", "two comma-separated area names").option("--area <area>", "area name", collect, []).option("--area-ids <ids>", "two comma-separated exact area IDs").option("--area-id <id>", "exact area ID for a feature comparison").option("--primitive <primitive>", "comparison primitive", "COUNT").option("--mode <mode>", "cloud, offline, or auto", "auto").option("--year <year>", "optional snapshot year, for example 2026").option("--db <path>", "optional local SQLite database").action(async (options) => {
   const features = [...options.feature, ...(options.features ? options.features.split(",").filter(Boolean) : [])];
   const areas = [...options.area, ...(options.areas ? options.areas.split(",").filter(Boolean) : [])];
   const areaIds = options.areaIds ? options.areaIds.split(",").filter(Boolean) : undefined;
@@ -98,10 +99,10 @@ compute.command("compare").option("--features <features>", "two comma-separated 
   try {
     const client = new E2(database ? { compute: database } : {});
     const request = features.length === 2
-      ? { features: features as [string, string], area: areas[0], area_id: options.areaId, primitive: options.primitive, mode: options.mode }
+      ? { features: features as [string, string], area: areas[0], area_id: options.areaId, primitive: options.primitive, mode: options.mode, ...(options.year !== undefined ? { year: options.year } : {}) }
       : areaIds?.length === 2
-        ? { feature: features[0], area_ids: areaIds as [string, string], primitive: options.primitive, mode: options.mode }
-        : { feature: features[0], areas: areas as [string, string], primitive: options.primitive, mode: options.mode };
+        ? { feature: features[0], area_ids: areaIds as [string, string], primitive: options.primitive, mode: options.mode, ...(options.year !== undefined ? { year: options.year } : {}) }
+        : { feature: features[0], areas: areas as [string, string], primitive: options.primitive, mode: options.mode, ...(options.year !== undefined ? { year: options.year } : {}) };
     if (features.length !== 2 && areas.length !== 2 && areaIds?.length !== 2) throw new Error("Compare requires two features or one feature and two areas");
     print(await client.compute.compare(request), true);
   } finally { database?.close(); }

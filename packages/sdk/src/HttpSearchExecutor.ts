@@ -26,6 +26,7 @@ export class HttpSearchExecutor implements SearchExecutor {
         h3Cells: query.h3Cells,
         country_code: query.country_code,
         state_code: query.state_code,
+        ...(query.year !== undefined && query.year !== null ? { year: query.year } : {}),
         mode: query.mode,
         limit: query.limit,
       }),

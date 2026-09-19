@@ -1,3 +1,5 @@
+import { stripInternalColumns } from "./internalColumns.js";
+
 export type SearchFeature = string | number;
 
 export interface SearchQuery {
@@ -5,6 +7,12 @@ export interface SearchQuery {
   regionId?: string | null;
   /** Internal route candidate narrowing; not a general search filter. */
   h3Cells?: readonly string[];
+  /**
+   * Optional snapshot year (for example `"2026"`). Year-split features
+   * (anything that is not `osm` or `visual`) default to the newest available
+   * year, cascading down from the current year.
+   */
+  year?: string | number | null;
   country_code?: string;
   state_code?: string;
   mode?: "cloud" | "offline" | "auto";
@@ -34,6 +42,7 @@ export interface SearchOptions extends Omit<SearchQuery, "feature" | "regionId" 
   area_id?: string | string[];
   country_code?: string;
   state_code?: string;
+  year?: string | number | null;
   latitude?: number;
   longitude?: number;
 }
@@ -54,10 +63,10 @@ function values<T>(value: T | T[] | undefined): T[] {
 
 function asFeature(row: SearchRow, imageUrlMessage?: string): SearchFeatureCollection["features"][number] {
   const { geometry = null, properties, id, ...fields } = row;
-  const merged = {
+  const merged = stripInternalColumns({
     ...fields,
     ...(properties && typeof properties === "object" ? properties : {}),
-  } as Record<string, unknown>;
+  } as Record<string, unknown>);
   if (imageUrlMessage) merged.image_url = imageUrlMessage;
   const feature = { type: "Feature" as const, geometry, properties: merged };
   const sourceId = fields.source_id ?? (properties && typeof properties === "object" ? (properties as Record<string, unknown>).source_id : undefined);
@@ -104,6 +113,7 @@ export class SearchClient {
           ...(h3Cells?.length ? { h3Cells } : {}),
           ...(options.country_code ? { country_code: options.country_code } : {}),
           ...(options.state_code ? { state_code: options.state_code } : {}),
+          ...(options.year !== undefined && options.year !== null ? { year: options.year } : {}),
           mode: options.mode,
           cacheDirectory: options.cacheDirectory,
           limit: perQueryLimit,

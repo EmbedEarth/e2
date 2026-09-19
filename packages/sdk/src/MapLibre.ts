@@ -9,6 +9,8 @@ import type { PublishedSnapshot } from "@embedearth/datasets";
 export type MapFeatureOptions = {
   color?: string; area_id?: string | null; area?: string; limit?: number;
   mode?: "cloud" | "offline" | "auto"; sourceLayer?: string; signal?: AbortSignal;
+  /** Optional snapshot year (for example `"2026"`); year-split features default to the newest year. */
+  year?: string | number | null;
 };
 export type MapOptions = Omit<MapLibreOptions, "container" | "style"> & { container: MapLibreOptions["container"]; e2?: E2; style?: string | StyleSpecification; planetSource?: string };
 export type MapRouteOptions = Parameters<E2["route"]["route"]>[0];
@@ -117,7 +119,7 @@ export class Map {
       const layerIds = sourceLayers.map((sourceLayer, index) => { const layerId = `${id}-${index}`; this.map.addLayer({ id: layerId, type: "circle", source: id, "source-layer": sourceLayer, paint: { "circle-radius": 4, "circle-color": options.color ?? "#3ecf8e", "circle-stroke-color": "#101817", "circle-stroke-width": 1 } }); return layerId; });
       this.sources.set(String(feature), { source: id, layers: layerIds }); return snapshot;
     }
-    this.addGeoJSON(id, await e2.search({ feature, ...(options.area_id ? { area_id: options.area_id } : { area: options.area }), mode: options.mode, limit: options.limit, signal: options.signal }), options.color);
+    this.addGeoJSON(id, await e2.search({ feature, ...(options.area_id ? { area_id: options.area_id } : { area: options.area }), mode: options.mode, limit: options.limit, signal: options.signal, ...(options.year !== undefined && options.year !== null ? { year: options.year } : {}) }), options.color);
     return snapshot;
   }
 

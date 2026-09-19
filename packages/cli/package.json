@@ -1,6 +1,6 @@
 {
   "name": "@embedearth/cli",
-  "version": "0.1.13",
+  "version": "0.1.15",
   "type": "module",
   "bin": {
     "earth": "dist/index.js"

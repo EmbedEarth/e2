@@ -1,0 +1,16 @@
+name: Release
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.9.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, registry-url: "https://registry.npmjs.org" }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test && pnpm build
+      - run: pnpm -r publish --access public --no-git-checks
+        env: { NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}" }
